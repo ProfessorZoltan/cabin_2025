@@ -1,0 +1,992 @@
+```python?code_reference&code_event_index=1
+import pandas as pd
+import json
+import io
+
+# New 2025 Data in CSV format (parsed from user input)
+data_csv = """Game,Eric,Brian,Mike,Final Rank,Average Rank,Game length (hours)
+Dune Imperium/Uprising,1,2,2,1,1.666666667,2
+Bitoku,2,3,3,2,2.666666667,2
+Darwin's Journey,4,9,1,3,4.666666667,3
+Galactic Renaissance,5,4,5,4,4.666666667,1.5
+Trailblazer: The Arizona Trail,6,6,4,5,5.333333333,2.666666667
+Rats of Wistar,8,1,8,6,5.666666667,1.666666667
+Wondrous Creatures,7,8,6,7,7,1.333333333
+Black Forest,3,10,9,8,7.333333333,2
+Glen More II,9,7,11,9,9,2
+Apiary,14,5,12,10,10.33333333,1.5
+Pillars of Heracles,10,14,7,11,10.333333333,3
+Etherstone,12,13,10,12,11.66666667,1
+Formosa Tea,11,12,16,13,13,1.5
+Rebirth,13,15,13,14,13.66666667,1
+Vantage,17,11,14,15,14,2
+Planepita,15,17,15,16,15.66666667,0.5
+Alpujarras,16,16,17,17,16.33333333,1.5
+"""
+
+# Load data
+df = pd.read_csv(io.StringIO(data_csv))
+
+# --- 1. Games Data Cleanup and Formatting ---
+# Rename columns to match the old JS structure keys
+df = df.rename(columns={
+    'Final Rank': 'Final Rank',
+    'Average Rank': 'Average Rank',
+    'Game length (hours)': 'Game length (hours)'
+})
+
+# Add placeholder columns if necessary (like the old data had)
+df['Tiebreaker: Average of 2 highest rankings'] = None
+df['BGG Time Estimate'] = None
+
+# Sort by Final Rank to ensure correct order for KPIs
+df = df.sort_values(by='Final Rank').reset_index(drop=True)
+
+# Convert to list of dicts for the 'games' key
+games_data = df.to_dict('records')
+
+# --- 2. Calculate KPIs ---
+total_games_played = len(df)
+total_gameplay_hours = df['Game length (hours)'].sum()
+top_game_rank = df.iloc[0]['Final Rank']
+top_game_name = df.iloc[0]['Game']
+
+# --- 3. Calculate Player Average Ranks ---
+player_ranks = df[['Mike', 'Brian', 'Eric']].mean().sort_values()
+player_avg_ranks = [
+    {'player': player, 'average_rank': rank}
+    for player, rank in player_ranks.items()
+]
+
+top_player = player_ranks.index[0]
+top_player_avg_rank = player_ranks.iloc[0]
+
+# --- 4. Create Scatter Data ---
+scatter_data = df[['Final Rank', 'Game length (hours)']].to_dict('records')
+
+# --- 5. Assemble the final JavaScript data object ---
+new_js_data = {
+    "games": games_data,
+    "player_avg_ranks": player_avg_ranks,
+    "top_player": top_player,
+    "top_player_avg_rank": top_player_avg_rank,
+    "total_games_played": total_games_played,
+    "scatter_data": scatter_data
+}
+
+# Convert to a JSON string for easy insertion into the HTML
+new_js_data_string = json.dumps(new_js_data, indent=4, ensure_ascii=False)
+
+# Print the resulting JSON string to include in the final HTML response
+print(new_js_data_string)
+print(f"Total Games Played: {total_games_played}")
+print(f"Total Gameplay Hours: {total_gameplay_hours}")
+print(f"Top Game: {top_game_name}")
+print(f"Top Player: {top_player} with Avg Rank: {top_player_avg_rank:.2f}")
+
+```
+
+```text?code_stdout&code_event_index=1
+{
+    "games": [
+        {
+            "Game": "Dune Imperium/Uprising",
+            "Eric": 1,
+            "Brian": 2,
+            "Mike": 2,
+            "Final Rank": 1,
+            "Average Rank": 1.666666667,
+            "Game length (hours)": 2.0,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Bitoku",
+            "Eric": 2,
+            "Brian": 3,
+            "Mike": 3,
+            "Final Rank": 2,
+            "Average Rank": 2.666666667,
+            "Game length (hours)": 2.0,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Darwin's Journey",
+            "Eric": 4,
+            "Brian": 9,
+            "Mike": 1,
+            "Final Rank": 3,
+            "Average Rank": 4.666666667,
+            "Game length (hours)": 3.0,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Galactic Renaissance",
+            "Eric": 5,
+            "Brian": 4,
+            "Mike": 5,
+            "Final Rank": 4,
+            "Average Rank": 4.666666667,
+            "Game length (hours)": 1.5,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Trailblazer: The Arizona Trail",
+            "Eric": 6,
+            "Brian": 6,
+            "Mike": 4,
+            "Final Rank": 5,
+            "Average Rank": 5.333333333,
+            "Game length (hours)": 2.666666667,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Rats of Wistar",
+            "Eric": 8,
+            "Brian": 1,
+            "Mike": 8,
+            "Final Rank": 6,
+            "Average Rank": 5.666666667,
+            "Game length (hours)": 1.666666667,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Wondrous Creatures",
+            "Eric": 7,
+            "Brian": 8,
+            "Mike": 6,
+            "Final Rank": 7,
+            "Average Rank": 7.0,
+            "Game length (hours)": 1.333333333,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Black Forest",
+            "Eric": 3,
+            "Brian": 10,
+            "Mike": 9,
+            "Final Rank": 8,
+            "Average Rank": 7.333333333,
+            "Game length (hours)": 2.0,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Glen More II",
+            "Eric": 9,
+            "Brian": 7,
+            "Mike": 11,
+            "Final Rank": 9,
+            "Average Rank": 9.0,
+            "Game length (hours)": 2.0,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Apiary",
+            "Eric": 14,
+            "Brian": 5,
+            "Mike": 12,
+            "Final Rank": 10,
+            "Average Rank": 10.33333333,
+            "Game length (hours)": 1.5,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Pillars of Heracles",
+            "Eric": 10,
+            "Brian": 14,
+            "Mike": 7,
+            "Final Rank": 11,
+            "Average Rank": 10.333333333,
+            "Game length (hours)": 3.0,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Etherstone",
+            "Eric": 12,
+            "Brian": 13,
+            "Mike": 10,
+            "Final Rank": 12,
+            "Average Rank": 11.66666667,
+            "Game length (hours)": 1.0,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Formosa Tea",
+            "Eric": 11,
+            "Brian": 12,
+            "Mike": 16,
+            "Final Rank": 13,
+            "Average Rank": 13.0,
+            "Game length (hours)": 1.5,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Rebirth",
+            "Eric": 13,
+            "Brian": 15,
+            "Mike": 13,
+            "Final Rank": 14,
+            "Average Rank": 13.66666667,
+            "Game length (hours)": 1.0,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Vantage",
+            "Eric": 17,
+            "Brian": 11,
+            "Mike": 14,
+            "Final Rank": 15,
+            "Average Rank": 14.0,
+            "Game length (hours)": 2.0,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Planepita",
+            "Eric": 15,
+            "Brian": 17,
+            "Mike": 15,
+            "Final Rank": 16,
+            "Average Rank": 15.66666667,
+            "Game length (hours)": 0.5,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        },
+        {
+            "Game": "Alpujarras",
+            "Eric": 16,
+            "Brian": 16,
+            "Mike": 17,
+            "Final Rank": 17,
+            "Average Rank": 16.33333333,
+            "Game length (hours)": 1.5,
+            "Tiebreaker: Average of 2 highest rankings": null,
+            "BGG Time Estimate": null
+        }
+    ],
+    "player_avg_ranks": [
+        {
+            "player": "Mike",
+            "average_rank": 9.0
+        },
+        {
+            "player": "Brian",
+            "average_rank": 9.0
+        },
+        {
+            "player": "Eric",
+            "average_rank": 9.0
+        }
+    ],
+    "top_player": "Mike",
+    "top_player_avg_rank": 9.0,
+    "total_games_played": 17,
+    "scatter_data": [
+        {
+            "Final Rank": 1,
+            "Game length (hours)": 2.0
+        },
+        {
+            "Final Rank": 2,
+            "Game length (hours)": 2.0
+        },
+        {
+            "Final Rank": 3,
+            "Game length (hours)": 3.0
+        },
+        {
+            "Final Rank": 4,
+            "Game length (hours)": 1.5
+        },
+        {
+            "Final Rank": 5,
+            "Game length (hours)": 2.666666667
+        },
+        {
+            "Final Rank": 6,
+            "Game length (hours)": 1.666666667
+        },
+        {
+            "Final Rank": 7,
+            "Game length (hours)": 1.333333333
+        },
+        {
+            "Final Rank": 8,
+            "Game length (hours)": 2.0
+        },
+        {
+            "Final Rank": 9,
+            "Game length (hours)": 2.0
+        },
+        {
+            "Final Rank": 10,
+            "Game length (hours)": 1.5
+        },
+        {
+            "Final Rank": 11,
+            "Game length (hours)": 3.0
+        },
+        {
+            "Final Rank": 12,
+            "Game length (hours)": 1.0
+        },
+        {
+            "Final Rank": 13,
+            "Game length (hours)": 1.5
+        },
+        {
+            "Final Rank": 14,
+            "Game length (hours)": 1.0
+        },
+        {
+            "Final Rank": 15,
+            "Game length (hours)": 2.0
+        },
+        {
+            "Final Rank": 16,
+            "Game length (hours)": 0.5
+        },
+        {
+            "Final Rank": 17,
+            "Game length (hours)": 1.5
+        }
+    ]
+}
+Total Games Played: 17
+Total Gameplay Hours: 30.166666667
+Top Game: Dune Imperium/Uprising
+Top Player: Mike with Avg Rank: 9.00
+
+```
+
+That's a fantastic new set of data\! I've updated the JavaScript data object with the 2025 rankings, calculated the new KPIs, and updated the header and footer to reflect the **2025 Edition**.
+
+The new key statistics are:
+
+  * **Total Games Played:** 17 (previously 14)
+  * **Total Gameplay Hours:** approximately $\mathbf{30.2}$ hours (previously $20.0$ hours)
+  * **Top Ranked Game:** **Dune Imperium/Uprising**
+  * **Top Player (Lowest Average Rank):** **Mike, Brian, and Eric** are all tied with an average rank of $\mathbf{9.00}$.
+
+Here is the complete, updated HTML code for your 2025 Infographic.
+
+-----
+
+## Updated 2025 Infographic HTML Code
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Board Game Weekend Rankings: Ireland, WV 2025</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F8F9FA; /* Light background */
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 800px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 400px; /* Default height for charts */
+            max-height: 50vh; /* Max height for responsiveness */
+        }
+        .table-container {
+            max-height: 500px;
+            overflow-y: auto;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .kpi-value {
+            font-weight: 900;
+            color: #F06060; /* Energetic Red */
+        }
+        .kpi-label {
+            color: #50514F; /* Dark Gray */
+        }
+        .header-gradient {
+            background: linear-gradient(90deg, #2A9D8F, #F7C325); /* Teal to Yellow gradient */
+        }
+        .section-heading {
+            color: #50514F; /* Dark Gray */
+        }
+        .card-border-top-yellow {
+            border-top: 4px solid #F7C325;
+        }
+        .card-border-top-red {
+            border-top: 4px solid #F06060;
+        }
+        .card-border-top-teal {
+            border-top: 4px solid #2A9D8F;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <header class="header-gradient text-white p-8 text-center shadow-lg rounded-b-xl">
+        <h1 class="text-4xl md:text-5xl font-bold">Board Game Weekend Rankings</h1>
+        <p class="text-xl mt-2">Ireland, WV - 2025 Edition</p>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <section id="overview" class="mb-12">
+            <div class="text-center mb-8">
+                <h2 class="text-3xl font-bold section-heading">Weekend Highlights</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">A quick look at the key statistics from the intense board gaming weekend. Who played, what was the top game, and what was the total time spent gaming?</p>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+                <div class="bg-white p-6 rounded-xl shadow-md card-border-top-teal">
+                    <p class="text-6xl kpi-value" id="totalGamesPlayed">--</p>
+                    <p class="text-xl mt-2 kpi-label">Total Games Played</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md card-border-top-yellow">
+                    <p class="text-6xl kpi-value" id="topGameRank">#--</p>
+                    <p class="text-xl mt-2 kpi-label">Top Ranked Game</p>
+                    <p class="text-md text-gray-500" id="topGameName">Loading...</p>
+                </div>
+                <div class="bg-white p-6 rounded-xl shadow-md card-border-top-red">
+                    <p class="text-6xl kpi-value" id="totalGameplayHours">--</p>
+                    <p class="text-xl mt-2 kpi-label">Total Hours of Gameplay</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="game-leaderboard" class="bg-white p-6 md:p-8 rounded-xl shadow-lg mb-12">
+            <div class="text-center mb-6">
+                <h2 class="text-3xl font-bold section-heading">Game Leaderboard: Player & Average Rankings</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">This chart displays individual player rankings for each game, along with the overall average rank. Games are sorted by their average rank, from most favorite (lowest average) to least favorite.</p>
+            </div>
+            <div class="chart-container" style="height: 600px; max-height: 70vh;">
+                <canvas id="gameLeaderboardChart"></canvas>
+            </div>
+        </section>
+
+        <section id="game-analysis" class="grid grid-cols-1 mb-12">
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg">
+                <div class="text-center mb-6">
+                    <h2 class="text-3xl font-bold section-heading">Rank vs. Game Length</h2>
+                    <p class="text-lg text-gray-600">Does game length influence its final ranking? This scatter plot explores if there's a correlation between how long a game takes and how highly it's ranked.</p>
+                </div>
+                <div class="chart-container" style="max-height: 45vh;">
+                    <canvas id="rankVsLengthChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <section id="full-rankings-table" class="bg-white p-6 md:p-8 rounded-xl shadow-lg">
+            <div class="text-center mb-6">
+                <h2 class="text-3xl font-bold section-heading">Complete Game Rankings</h2>
+                <p class="text-lg text-gray-600 max-w-3xl mx-auto">Dive into the detailed breakdown of each game, including individual player ranks, the calculated average rank, and the official final rank for the weekend.</p>
+            </div>
+            <div class="table-container">
+                <table class="w-full text-left border-collapse">
+                    <thead class="sticky top-0 bg-gray-100 rounded-t-lg">
+                        <tr>
+                            <th class="p-3 font-semibold text-sm text-gray-600 uppercase">Final Rank</th>
+                            <th class="p-3 font-semibold text-sm text-gray-600 uppercase">Game</th>
+                            <th class="p-3 font-semibold text-sm text-gray-600 uppercase">Mike</th>
+                            <th class="p-3 font-semibold text-sm text-gray-600 uppercase">Brian</th>
+                            <th class="p-3 font-semibold text-sm text-gray-600 uppercase">Eric</th>
+                            <th class="p-3 font-semibold text-sm text-gray-600 uppercase">Avg. Rank</th>
+                            <th class="p-3 font-semibold text-sm text-gray-600 uppercase">Length (hrs)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200" id="fullRankingsTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="text-center p-6 mt-8 text-gray-500">
+        <p>Infographic generated on July 28, 2025. Data from Ireland, WV Board Game Weekend 2025.</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const data = {
+                "games": [
+                    {
+                        "Game": "Dune Imperium/Uprising",
+                        "Eric": 1,
+                        "Brian": 2,
+                        "Mike": 2,
+                        "Final Rank": 1,
+                        "Average Rank": 1.666666667,
+                        "Game length (hours)": 2.0,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Bitoku",
+                        "Eric": 2,
+                        "Brian": 3,
+                        "Mike": 3,
+                        "Final Rank": 2,
+                        "Average Rank": 2.666666667,
+                        "Game length (hours)": 2.0,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Darwin's Journey",
+                        "Eric": 4,
+                        "Brian": 9,
+                        "Mike": 1,
+                        "Final Rank": 3,
+                        "Average Rank": 4.666666667,
+                        "Game length (hours)": 3.0,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Galactic Renaissance",
+                        "Eric": 5,
+                        "Brian": 4,
+                        "Mike": 5,
+                        "Final Rank": 4,
+                        "Average Rank": 4.666666667,
+                        "Game length (hours)": 1.5,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Trailblazer: The Arizona Trail",
+                        "Eric": 6,
+                        "Brian": 6,
+                        "Mike": 4,
+                        "Final Rank": 5,
+                        "Average Rank": 5.333333333,
+                        "Game length (hours)": 2.666666667,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Rats of Wistar",
+                        "Eric": 8,
+                        "Brian": 1,
+                        "Mike": 8,
+                        "Final Rank": 6,
+                        "Average Rank": 5.666666667,
+                        "Game length (hours)": 1.666666667,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Wondrous Creatures",
+                        "Eric": 7,
+                        "Brian": 8,
+                        "Mike": 6,
+                        "Final Rank": 7,
+                        "Average Rank": 7.0,
+                        "Game length (hours)": 1.333333333,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Black Forest",
+                        "Eric": 3,
+                        "Brian": 10,
+                        "Mike": 9,
+                        "Final Rank": 8,
+                        "Average Rank": 7.333333333,
+                        "Game length (hours)": 2.0,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Glen More II",
+                        "Eric": 9,
+                        "Brian": 7,
+                        "Mike": 11,
+                        "Final Rank": 9,
+                        "Average Rank": 9.0,
+                        "Game length (hours)": 2.0,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Apiary",
+                        "Eric": 14,
+                        "Brian": 5,
+                        "Mike": 12,
+                        "Final Rank": 10,
+                        "Average Rank": 10.33333333,
+                        "Game length (hours)": 1.5,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Pillars of Heracles",
+                        "Eric": 10,
+                        "Brian": 14,
+                        "Mike": 7,
+                        "Final Rank": 11,
+                        "Average Rank": 10.333333333,
+                        "Game length (hours)": 3.0,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Etherstone",
+                        "Eric": 12,
+                        "Brian": 13,
+                        "Mike": 10,
+                        "Final Rank": 12,
+                        "Average Rank": 11.66666667,
+                        "Game length (hours)": 1.0,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Formosa Tea",
+                        "Eric": 11,
+                        "Brian": 12,
+                        "Mike": 16,
+                        "Final Rank": 13,
+                        "Average Rank": 13.0,
+                        "Game length (hours)": 1.5,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Rebirth",
+                        "Eric": 13,
+                        "Brian": 15,
+                        "Mike": 13,
+                        "Final Rank": 14,
+                        "Average Rank": 13.66666667,
+                        "Game length (hours)": 1.0,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Vantage",
+                        "Eric": 17,
+                        "Brian": 11,
+                        "Mike": 14,
+                        "Final Rank": 15,
+                        "Average Rank": 14.0,
+                        "Game length (hours)": 2.0,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Planepita",
+                        "Eric": 15,
+                        "Brian": 17,
+                        "Mike": 15,
+                        "Final Rank": 16,
+                        "Average Rank": 15.66666667,
+                        "Game length (hours)": 0.5,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    },
+                    {
+                        "Game": "Alpujarras",
+                        "Eric": 16,
+                        "Brian": 16,
+                        "Mike": 17,
+                        "Final Rank": 17,
+                        "Average Rank": 16.33333333,
+                        "Game length (hours)": 1.5,
+                        "Tiebreaker: Average of 2 highest rankings": null,
+                        "BGG Time Estimate": null
+                    }
+                ],
+                "player_avg_ranks": [
+                    {
+                        "player": "Mike",
+                        "average_rank": 9.0
+                    },
+                    {
+                        "player": "Brian",
+                        "average_rank": 9.0
+                    },
+                    {
+                        "player": "Eric",
+                        "average_rank": 9.0
+                    }
+                ],
+                "top_player": "Mike",
+                "top_player_avg_rank": 9.0,
+                "total_games_played": 17,
+                "scatter_data": [
+                    {
+                        "Final Rank": 1,
+                        "Game length (hours)": 2.0
+                    },
+                    {
+                        "Final Rank": 2,
+                        "Game length (hours)": 2.0
+                    },
+                    {
+                        "Final Rank": 3,
+                        "Game length (hours)": 3.0
+                    },
+                    {
+                        "Final Rank": 4,
+                        "Game length (hours)": 1.5
+                    },
+                    {
+                        "Final Rank": 5,
+                        "Game length (hours)": 2.666666667
+                    },
+                    {
+                        "Final Rank": 6,
+                        "Game length (hours)": 1.666666667
+                    },
+                    {
+                        "Final Rank": 7,
+                        "Game length (hours)": 1.333333333
+                    },
+                    {
+                        "Final Rank": 8,
+                        "Game length (hours)": 2.0
+                    },
+                    {
+                        "Final Rank": 9,
+                        "Game length (hours)": 2.0
+                    },
+                    {
+                        "Final Rank": 10,
+                        "Game length (hours)": 1.5
+                    },
+                    {
+                        "Final Rank": 11,
+                        "Game length (hours)": 3.0
+                    },
+                    {
+                        "Final Rank": 12,
+                        "Game length (hours)": 1.0
+                    },
+                    {
+                        "Final Rank": 13,
+                        "Game length (hours)": 1.5
+                    },
+                    {
+                        "Final Rank": 14,
+                        "Game length (hours)": 1.0
+                    },
+                    {
+                        "Final Rank": 15,
+                        "Game length (hours)": 2.0
+                    },
+                    {
+                        "Final Rank": 16,
+                        "Game length (hours)": 0.5
+                    },
+                    {
+                        "Final Rank": 17,
+                        "Game length (hours)": 1.5
+                    }
+                ]
+            };
+
+            // Calculate Total Gameplay Hours
+            const totalGameplayHours = data.games.reduce((sum, game) => sum + game['Game length (hours)'], 0);
+
+            // Set KPI values
+            document.getElementById('totalGamesPlayed').textContent = data.total_games_played;
+            document.getElementById('topGameRank').textContent = `#${data.games[0]['Final Rank']}`;
+            document.getElementById('topGameName').textContent = data.games[0]['Game'];
+            document.getElementById('totalGameplayHours').textContent = totalGameplayHours.toFixed(1);
+
+            const colors = {
+                yellow: '#F7C325',
+                red: '#F06060',
+                teal: '#2A9D8F',
+                orange: '#FF9F1C',
+                darkGray: '#50514F',
+                lightGray: '#D1D5DB' // Added for average rank line
+            };
+
+            const tooltipTitleCallback = (tooltipItems) => {
+                const item = tooltipItems[0];
+                let label = item.chart.data.labels[item.dataIndex];
+                if (Array.isArray(label)) {
+                    return label.join(' ');
+                }
+                return label;
+            };
+
+            // Game Leaderboard Chart (Horizontal Bar for Player and Average Ranks)
+            const renderGameLeaderboardChart = () => {
+                // Sort games by Average Rank (best to worst, i.e., lowest average rank first)
+                const sortedGames = [...data.games].sort((a, b) => a['Average Rank'] - b['Average Rank']);
+
+                const ctx = document.getElementById('gameLeaderboardChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'bar', // Base type is bar
+                    data: {
+                        labels: sortedGames.map(game => game.Game),
+                        datasets: [
+                            {
+                                label: 'Mike\'s Rank',
+                                data: sortedGames.map(game => game.Mike),
+                                backgroundColor: colors.teal,
+                                borderColor: colors.darkGray,
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Brian\'s Rank',
+                                data: sortedGames.map(game => game.Brian),
+                                backgroundColor: colors.yellow,
+                                borderColor: colors.darkGray,
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Eric\'s Rank',
+                                data: sortedGames.map(game => game.Eric),
+                                backgroundColor: colors.red,
+                                borderColor: colors.darkGray,
+                                borderWidth: 1
+                            },
+                            {
+                                label: 'Average Rank',
+                                data: sortedGames.map(game => game['Average Rank']),
+                                type: 'line', // Make this dataset a line
+                                borderColor: colors.orange,
+                                borderWidth: 3,
+                                pointRadius: 6,
+                                pointBackgroundColor: colors.orange,
+                                pointBorderColor: '#ffffff',
+                                pointBorderWidth: 2,
+                                fill: false, // Do not fill area under the line
+                                tension: 0.3 // Smooth the line
+                            }
+                        ]
+                    },
+                    options: {
+                        indexAxis: 'y',
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: true, position: 'top', labels: { font: { size: 12 } } },
+                            tooltip: {
+                                callbacks: {
+                                    title: tooltipTitleCallback,
+                                    label: function(context) {
+                                        return `${context.dataset.label}: ${context.parsed.x}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                beginAtZero: true,
+                                reverse: false, // Rank 1 is best (lower value)
+                                title: { display: true, text: 'Rank', font: { weight: 'bold' } },
+                                ticks: { stepSize: 1 }
+                            },
+                            y: {
+                                title: { display: false },
+                                ticks: {
+                                    font: { size: 10, weight: '600' },
+                                    autoSkip: false
+                                }
+                            }
+                        }
+                    }
+                });
+            };
+
+            // Rank vs. Game Length Chart (Scatter)
+            const renderRankVsLengthChart = () => {
+                const ctx = document.getElementById('rankVsLengthChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'scatter',
+                    data: {
+                        datasets: [{
+                            label: 'Game',
+                            data: data.scatter_data.map(item => ({ x: item['Game length (hours)'], y: item['Final Rank'] })),
+                            backgroundColor: colors.orange,
+                            pointRadius: 8,
+                            pointHoverRadius: 12
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const game = data.games.find(g => g['Final Rank'] === context.parsed.y && g['Game length (hours)'] === context.parsed.x);
+                                        return game ? `${game.Game}: Rank ${game['Final Rank']} (${game['Game length (hours)'].toFixed(1)} hrs)` : '';
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                type: 'linear',
+                                position: 'bottom',
+                                title: { display: true, text: 'Game Length (Hours)', font: { weight: 'bold' } },
+                                beginAtZero: true
+                            },
+                            y: {
+                                title: { display: true, text: 'Final Rank', font: { weight: 'bold' } },
+                                beginAtZero: true,
+                                reverse: true // Lower rank is better
+                            }
+                        }
+                    }
+                });
+            };
+
+            // Full Rankings Table
+            const renderFullRankingsTable = () => {
+                const tableBody = document.getElementById('fullRankingsTableBody');
+                tableBody.innerHTML = '';
+                data.games.forEach(game => {
+                    const row = document.createElement('tr');
+                    row.className = 'hover:bg-gray-50';
+                    row.innerHTML = `
+                        <td class="p-3 font-bold text-lg text-white rounded-full px-3 py-1 text-center" style="background-color: ${game['Final Rank'] <= 3 ? colors.teal : game['Final Rank'] <= 8 ? colors.yellow : colors.orange};">${game['Final Rank']}</td>
+                        <td class="p-3 font-semibold">${game.Game}</td>
+                        <td class="p-3 text-gray-600">${game.Mike}</td>
+                        <td class="p-3 text-gray-600">${game.Brian}</td>
+                        <td class="p-3 text-gray-600">${game.Eric}</td>
+                        <td class="p-3 text-gray-600">${game['Average Rank'].toFixed(2)}</td>
+                        <td class="p-3 text-gray-600">${game['Game length (hours)'].toFixed(1)}</td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            };
+
+            // NOTE: I updated the logic for the final rank colors in the table to account for 17 games (Top 3 = Teal, Ranks 4-8 = Yellow, 9+ = Orange)
+
+            renderGameLeaderboardChart();
+            renderRankVsLengthChart();
+            renderFullRankingsTable();
+        });
+    </script>
+</body>
+</html>
+```
